@@ -66,6 +66,8 @@ class Board extends React.Component {
     let nRows;
     let nCols;
     for (let i=Math.floor(Math.sqrt(n)); i>0; i--){
+      // get the largest factor <= the square root and use that for #rows
+      // use its partner for #cols
       if (n%i == 0){
         nRows = i;
         nCols = n/i;
