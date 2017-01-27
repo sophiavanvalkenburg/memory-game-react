@@ -45,19 +45,29 @@ function getGameData(){
 }
 
 const Card = props => (
-  <button className={styles.boardCard} onClick={() => alert("click")}>
+  <button className={styles.boardCard} onClick={() => props.onClick()}>
     {props.content}
   </button>
 )
 
 class Board extends React.Component {
   
+  renderCard(card){
+    let content;
+    if (card.isFaceDown){
+      content = null;
+    }else{
+      content = card.content;
+    }
+    return <Card key={`card${card.key}`} content={content} onClick={() => this.props.onClick(card.key)}/>;
+  }
+
   renderRow(nRow, rowData){
     let row = [];
     for (let i=0; i<4; i++){
-      row.push(<Card key={`card-${nRow}-${i}`} content={rowData[i]}/>);
+      row.push(this.renderCard(rowData[i]));
     }
-    return ( <div key={`row-${nRow}`} className={styles.boardRow}>{ row }</div>);
+    return ( <div key={`row${nRow}`} className={styles.boardRow}>{ row }</div>);
   }
 
   renderBoard(){
@@ -77,17 +87,38 @@ class Board extends React.Component {
 class Game extends React.Component {
   constructor(){
     super();
+    const gameData = getGameData();
     this.state = {
-      gameData: getGameData()
+      cardState: this.initialCardState(gameData)
     }
   }
+  initialCardState(gameData){
+    const cardData = gameData.levels[0].cards.slice();
+    const cardState = [];
+    for (let i=0; i<cardData.length; i++){
+      cardState.push({
+        key: i,
+        content: cardData[i],
+        isFaceDown: true,
+        isMatched: false
+      });
+    }
+    return cardState;
+  }
+  handleClick(i){
+    const cardState = this.state.cardState.slice();
+    cardState[i].isFaceDown = false;
+    this.setState({
+      cardState: cardState
+    });
+  }
   render() {
-    const cardData = this.state.gameData.levels[0].cards.slice();
+    const cardData = this.state.cardState.slice();
     return (
       <div>
         <h1 className={styles.header}>NYT Games Code Test</h1>
         <Timer />
-        <div><Board cardData={cardData} /></div>
+        <div><Board cardData={cardData} onClick={(i) => this.handleClick(i)}/></div>
       </div>
     )
   }
