@@ -105,12 +105,39 @@ class Game extends React.Component {
     }
     return cardState;
   }
+  getUnmatchedFaceUpCard(){
+    let cardIndex = -1;
+    for(let i=0; i<this.state.cardState.length; i++){
+      const card = this.state.cardState[i];
+      if (!card.isFaceDown && !card.isMatched){
+        cardIndex = i;
+        break;
+      }
+    }
+    return cardIndex;
+  }
+  cardsMatch(i, j){
+    return this.state.cardState[i].content === this.state.cardState[j].content;
+  }
   handleClick(i){
-    const cardState = this.state.cardState.slice();
-    cardState[i].isFaceDown = false;
-    this.setState({
-      cardState: cardState
-    });
+    if (this.state.cardState[i].isFaceDown){
+      const cardState = this.state.cardState.slice();
+      const unmatchedCardIndex = this.getUnmatchedFaceUpCard(); 
+      if (unmatchedCardIndex >= 0){
+        if (this.cardsMatch(unmatchedCardIndex, i)){
+          cardState[i].isFaceDown = false;
+          cardState[i].isMatched = true;
+          cardState[unmatchedCardIndex].isMatched = true;
+        }else{
+          cardState[unmatchedCardIndex].isFaceDown = true;
+        }
+      }else{
+        cardState[i].isFaceDown = false;
+      }
+      this.setState({
+        cardState: cardState
+      }); 
+    }
   }
   render() {
     const cardData = this.state.cardState.slice();
