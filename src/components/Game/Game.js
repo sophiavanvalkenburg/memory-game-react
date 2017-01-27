@@ -39,7 +39,7 @@ function getGameData(){
         "♘"
       ],
       "difficulty": "hard"
-    }
+    },
     ]
   } 
 }
@@ -51,7 +51,34 @@ const Card = props => (
 )
 
 class Board extends React.Component {
-  
+
+  constructor(props){
+    super();
+    this.state = {
+      boardData: this.makeBoardData(props.cardData)
+    }
+  }
+
+  makeBoardData(cardData){
+    // approximate a square board
+    // probably too slow for large sets of cards, but OK for this purpose
+    const n = cardData.length;
+    let nRows;
+    let nCols;
+    for (let i=Math.floor(Math.sqrt(n)); i>0; i--){
+      if (n%i == 0){
+        nRows = i;
+        nCols = n/i;
+        break;
+      }
+    }
+    const boardData = [];
+    for (let i=0; i<nRows; i++){
+      boardData.push(cardData.slice(i * nCols, i * nCols + nCols));
+    }
+    return boardData;
+  }
+
   renderCard(card){
     let content;
     if (card.isMatched){
@@ -64,19 +91,18 @@ class Board extends React.Component {
     return <Card key={`card${card.key}`} content={content} onClick={() => this.props.onClick(card.key)}/>;
   }
 
-  renderRow(nRow, rowData){
+  renderRow(iRow, rowData){
     let row = [];
-    for (let i=0; i<4; i++){
-      row.push(this.renderCard(rowData[i]));
+    for (let j=0; j<rowData.length; j++){
+      row.push(this.renderCard(rowData[j]));
     }
-    return ( <div key={`row${nRow}`} className={styles.boardRow}>{ row }</div>);
+    return ( <div key={`row${iRow}`} className={styles.boardRow}>{ row }</div>);
   }
 
   renderBoard(){
     let board = [];
-    for (let i=0; i<2; i++){
-      const rowData = this.props.cardData.slice(i * 4, i * 4 + 4);
-      board.push(this.renderRow(i, rowData));
+    for (let i=0; i<this.state.boardData.length; i++){
+      board.push(this.renderRow(i, this.state.boardData[i]));
     }
     return (<div>{ board }</div>);
   }
@@ -96,7 +122,7 @@ class Game extends React.Component {
     }
   }
   initialCardState(gameData){
-    const cardData = gameData.levels[0].cards.slice();
+    const cardData = gameData.levels[1].cards.slice();
     const cardState = [];
     for (let i=0; i<cardData.length; i++){
       cardState.push({
