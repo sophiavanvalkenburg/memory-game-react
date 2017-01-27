@@ -54,8 +54,10 @@ class Board extends React.Component {
   
   renderCard(card){
     let content;
-    if (card.isFaceDown){
+    if (card.isMatched){
       content = null;
+    }else if (card.isFaceDown){
+      content = "?"
     }else{
       content = card.content;
     }
@@ -89,7 +91,8 @@ class Game extends React.Component {
     super();
     const gameData = getGameData();
     this.state = {
-      cardState: this.initialCardState(gameData)
+      cardState: this.initialCardState(gameData),
+      gameStarted: false
     }
   }
   initialCardState(gameData){
@@ -119,7 +122,22 @@ class Game extends React.Component {
   cardsMatch(i, j){
     return this.state.cardState[i].content === this.state.cardState[j].content;
   }
+  checkAllCardsMatched(){
+    let allMatched = true;
+    for(let i=0; i<this.state.cardState.length; i++){
+      if (!this.state.cardState[i].isMatched){
+        allMatched = false;
+        break;
+      }
+    }
+    return allMatched;
+  }
   handleClick(i){
+    if (!this.state.gameStarted){
+      this.setState({
+        gameStarted: true
+      })
+    }
     if (this.state.cardState[i].isFaceDown){
       const cardState = this.state.cardState.slice();
       const unmatchedCardIndex = this.getUnmatchedFaceUpCard(); 
@@ -135,8 +153,13 @@ class Game extends React.Component {
         cardState[i].isFaceDown = false;
       }
       this.setState({
-        cardState: cardState
-      }); 
+          cardState: cardState,
+      })
+      if (this.checkAllCardsMatched()){
+        this.setState({
+          gameStarted: false
+        })
+      }
     }
   }
   render() {
@@ -144,7 +167,7 @@ class Game extends React.Component {
     return (
       <div>
         <h1 className={styles.header}>NYT Games Code Test</h1>
-        <Timer />
+        <Timer startTimer={this.state.gameStarted} />
         <div><Board cardData={cardData} onClick={(i) => this.handleClick(i)}/></div>
       </div>
     )
