@@ -61,7 +61,6 @@ class Board extends React.Component {
 
   makeBoardData(cardData){
     // approximate a square board
-    // probably too slow for large sets of cards, but OK for this purpose
     const n = cardData.length;
     let nRows;
     let nCols;
@@ -120,11 +119,12 @@ class Game extends React.Component {
     const gameData = getGameData();
     this.state = {
       cardState: this.initialCardState(gameData),
-      gameStarted: false
+      gameStarted: false,
+      gameClickable: true
     }
   }
   initialCardState(gameData){
-    const cardData = gameData.levels[1].cards.slice();
+    const cardData = gameData.levels[0].cards.slice();
     const cardState = [];
     for (let i=0; i<cardData.length; i++){
       cardState.push({
@@ -161,33 +161,46 @@ class Game extends React.Component {
     return allMatched;
   }
   handleClick(i){
-    if (!this.state.gameStarted){
-      this.setState({
-        gameStarted: true
-      })
-    }
-    if (this.state.cardState[i].isFaceDown){
-      const cardState = this.state.cardState.slice();
-      const unmatchedCardIndex = this.getUnmatchedFaceUpCard(); 
-      if (unmatchedCardIndex >= 0){
-        if (this.cardsMatch(unmatchedCardIndex, i)){
-          cardState[i].isFaceDown = false;
-          cardState[i].isMatched = true;
-          cardState[unmatchedCardIndex].isMatched = true;
-        }else{
-          cardState[unmatchedCardIndex].isFaceDown = true;
-        }
-      }else{
-        cardState[i].isFaceDown = false;
-      }
-      this.setState({
-          cardState: cardState,
-      })
-      if (this.checkAllCardsMatched()){
+    if (this.state.gameClickable){
+      if (!this.state.gameStarted){
         this.setState({
-          gameStarted: false
+          gameStarted: true
         })
       }
+      if (this.state.cardState[i].isFaceDown){
+        const cardState = this.state.cardState.slice();
+        const unmatchedCardIndex = this.getUnmatchedFaceUpCard(); 
+        cardState[i].isFaceDown = false;
+        this.setState({
+          cardState: cardState
+        })
+        if (unmatchedCardIndex >= 0){
+          this.setState({
+            gameClickable: false
+          });
+          setTimeout(this.checkCardStateAfterClick.bind(this, i, unmatchedCardIndex), 750);
+        }
+      }
+    }
+  }
+  checkCardStateAfterClick(i, unmatchedCardIndex){
+    const cardState = this.state.cardState.slice();
+    if (this.cardsMatch(unmatchedCardIndex, i)){
+      cardState[i].isMatched = true;
+      cardState[unmatchedCardIndex].isMatched = true;
+    }else{
+      cardState[i].isFaceDown = true;
+      cardState[unmatchedCardIndex].isFaceDown = true;
+    }
+    this.setState({
+      cardState: cardState,
+      gameClickable: true
+    })
+    if (this.checkAllCardsMatched()){
+      this.setState({
+        gameStarted: false,
+        gameClickable: false
+      })
     }
   }
   render() {
