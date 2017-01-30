@@ -95,9 +95,19 @@ class Board extends React.Component {
 const WinMessage = props => {
   // displays a message and replay/level up buttons when the user wins the game
   let levelUpBtn = null;
+  let levelDownBtn = null;
   if (props.showLevelUpBtn){
     levelUpBtn = (
-        <button className={styles.winBtn} onClick={()=>props.onLevelUpBtnClick()}>Level Up</button>
+        <button className={styles.winBtn} onClick={()=>props.onLevelUpBtnClick()}>
+          Level Up
+        </button>
+      )
+  }
+  if (props.showLevelDownBtn){
+    levelDownBtn = (
+        <button className={styles.winBtn} onClick={()=>props.onLevelDownBtnClick()}>
+          Level Down
+        </button>
       )
   }
   return (
@@ -105,6 +115,7 @@ const WinMessage = props => {
       <h2 className={`${styles.text} ${styles.wonMsg}`}>Congratulations! You Won!</h2>
       <button className={styles.winBtn} onClick={()=>props.onReplayBtnClick()}>Replay</button>
       {levelUpBtn}
+      {levelDownBtn}
     </div>
   )
 }
@@ -271,6 +282,10 @@ class Game extends React.Component {
       })
     }
   }
+  handleLevelDownBtnClick(){
+    this.state.currentLevel--;
+    this.resetGameState();
+  }
   handleLevelUpBtnClick(){
     this.state.currentLevel++;
     this.resetGameState();
@@ -289,8 +304,10 @@ class Game extends React.Component {
   getWinMessage(){
     return (<WinMessage 
           showLevelUpBtn={this.state.currentLevel < this.state.maxLevel}
+          showLevelDownBtn={this.state.currentLevel > 0}
           onReplayBtnClick={()=>this.handleReplayBtnClick()} 
           onLevelUpBtnClick={()=>this.handleLevelUpBtnClick()}
+          onLevelDownBtnClick={()=>this.handleLevelDownBtnClick()}
         />);
   }
   getStatusMessage(){
