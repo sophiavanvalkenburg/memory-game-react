@@ -125,7 +125,7 @@ class Game extends React.Component {
   constructor(){
     super();
     this.state = {
-      cardState: [],
+      cardState: [], // array of {key, content, isFaceDown, isMatched}
       gamePaused: true,
       gameClickable: false,
       gameStarted: false,
@@ -138,7 +138,7 @@ class Game extends React.Component {
       loadingMessage: "Loading ...",
       winMessage: "Congratulations! You Won!",
       title: "Memory Game",
-      gameDataUrl: "https://web-code-test-dot-nyt-games-prd.appspot.com/cards.json"
+      gameDataUrl: "https://web-code-test-dot-nyt-games-prd.appspot.com/cards.json",
     }
   }
   componentDidMount(){
