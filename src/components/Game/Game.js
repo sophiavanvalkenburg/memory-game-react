@@ -325,16 +325,19 @@ class Game extends React.Component {
   render() {
     const cardData = this.state.cardState.slice();
     const statusMessage = this.getStatusMessage();
+    const board = this.state.gameWon ? null : (
+        <div className={styles.boardContainer}>
+          <Board cardData={cardData} onClick={(i) => this.handleClick(i)}/>
+        </div>
+      )
     return (
       <div> 
         <h1 className={`${styles.header} ${styles.text}`}>NYT Games Code Test</h1>
         <Timer shouldTick={!this.state.gamePaused} shouldReset={!this.state.gameWon && !this.state.gameStarted} />
         <div className={styles.text}>Mismatches: { this.state.numMismatches }</div>
         <div>{statusMessage}</div>
-        <div className={styles.boardContainer}>
-          <Board cardData={cardData} onClick={(i) => this.handleClick(i)}/>
+        {board}
         </div>
-      </div>
     )
   }
 }
