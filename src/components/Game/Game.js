@@ -112,7 +112,7 @@ const WinMessage = props => {
   }
   return (
     <div>
-      <h2 className={`${styles.text} ${styles.wonMsg}`}>Congratulations! You Won!</h2>
+      <h2 className={`${styles.text} ${styles.wonMsg}`}>{props.winMessage}</h2>
       <button className={styles.winBtn} onClick={()=>props.onReplayBtnClick()}>Replay</button>
       {levelUpBtn}
       {levelDownBtn}
@@ -134,12 +134,16 @@ class Game extends React.Component {
       currentLevel: 0,
       maxLevel: 0,
       numMismatches: 0,
-      errorMessage: null
+      errorMessage: null,
+      loadingMessage: "Loading ...",
+      winMessage: "Congratulations! You Won!",
+      title: "Memory Game",
+      gameDataUrl: "https://web-code-test-dot-nyt-games-prd.appspot.com/cards.json"
     }
   }
   componentDidMount(){
     // load the data from an external source
-    fetch("https://web-code-test-dot-nyt-games-prd.appspot.com/cards.json")
+    fetch(this.state.gameDataUrl)
       .then((response) => {
         let gameData = null;
         if (response.status == 200){
@@ -303,6 +307,7 @@ class Game extends React.Component {
   }
   getWinMessage(){
     return (<WinMessage 
+          winMessage={this.state.winMessage}
           showLevelUpBtn={this.state.currentLevel < this.state.maxLevel}
           showLevelDownBtn={this.state.currentLevel > 0}
           onReplayBtnClick={()=>this.handleReplayBtnClick()} 
@@ -318,7 +323,7 @@ class Game extends React.Component {
     }else if (this.state.errorMessage != null){
       statusMessage = (<div className={styles.text}>{this.state.errorMessage}</div>);
     }else if (!this.state.gameLoaded){
-      statusMessage = (<div className={styles.text}>Loading ...</div>);
+      statusMessage = (<div className={styles.text}>{this.state.loadingMessage}</div>);
     }
     return statusMessage;
   }
@@ -332,7 +337,7 @@ class Game extends React.Component {
       )
     return (
       <div> 
-        <h1 className={`${styles.header} ${styles.text}`}>NYT Games Code Test</h1>
+        <h1 className={`${styles.header} ${styles.text}`}>{this.state.title}</h1>
         <Timer shouldTick={!this.state.gamePaused} shouldReset={!this.state.gameWon && !this.state.gameStarted} />
         <div className={styles.text}>Mismatches: { this.state.numMismatches }</div>
         <div>{statusMessage}</div>
