@@ -5,6 +5,7 @@ import Timer from '../Timer/Timer'
 import styles from './Game.scss'
 
 const Card = props => {
+  // a card that has an image or is blank
   let boardCardEmptyStyle = "";
   if (props.content === null){
     boardCardEmptyStyle = styles.boardCardEmpty;
@@ -17,6 +18,7 @@ const Card = props => {
 }
 
 class Board extends React.Component {
+  // a collection of cards
 
   constructor(props){
     super();
@@ -26,16 +28,21 @@ class Board extends React.Component {
   }
 
   componentWillReceiveProps(props){
-    this.setState({
-      boardData: this.makeBoardData(props.cardData)
-    });
+    if (props.cardData){
+      this.setState({
+        boardData: this.makeBoardData(props.cardData)
+      });
+    }
   }
 
   makeBoardData(cardData){
     // approximate a square board
+    if (!cardData){
+      return [];
+    }
     const n = cardData.length;
-    let nRows;
-    let nCols;
+    let nRows = 0;
+    let nCols = 0;
     for (let i=Math.floor(Math.sqrt(n)); i>0; i--){
       // get the largest factor <= the square root and use that for #rows
       // use its partner for #cols
@@ -86,6 +93,7 @@ class Board extends React.Component {
 }
 
 const WinMessage = props => {
+  // displays a message and replay/level up buttons when the user wins the game
   let levelUpBtn = null;
   if (props.showLevelUpBtn){
     levelUpBtn = (
@@ -102,6 +110,7 @@ const WinMessage = props => {
 }
 
 class Game extends React.Component {
+  // class containing all game-related components as well as game logic
   constructor(){
     super();
     this.state = {
@@ -110,41 +119,77 @@ class Game extends React.Component {
       gameClickable: false,
       gameStarted: false,
       gameWon: false,
+      gameLoaded: false,
       currentLevel: 0,
       maxLevel: 0,
       numMismatches: 0,
+      errorMessage: null
     }
   }
   componentDidMount(){
+    // load the data from an external source
     fetch("https://web-code-test-dot-nyt-games-prd.appspot.com/cards.json")
       .then((response) => {
-        return response.json();
+        let gameData = null;
+        if (response.status == 200){
+          gameData = response.json();
+        }
+        return gameData;
       }).then((gameData) => {
-        this.state.gameData = gameData;
-        this.setState({
-          cardState: this.initialCardState(),
-          gameClickable: true,
-          maxLevel: this.getMaxLevel()
-        });
+        if (gameData != null){
+          this.state.gameData = gameData;
+          this.setState({
+            cardState: this.initialCardState(),
+            gameClickable: true,
+            maxLevel: this.getMaxLevel(),
+            gameLoaded: true
+          });
+        }else{
+          this.setErrorMessage();
+        }
+      }).catch((error)=>{
+          this.setErrorMessage();
       })
   }
+  setErrorMessage(){
+    this.setState({
+        errorMessage: "Game data failed to load",
+        gameLoaded: true
+    })
+  }
   getMaxLevel(){
-    return this.state.gameData.levels.length - 1;
+    let maxLevel = -1;
+    if (this.state.gameData && this.state.gameData.levels){
+      maxLevel = this.state.gameData.levels.length - 1;
+    }
+    return maxLevel;
+  }
+  gameDataIsInExpectedFormat(){
+    // make sure the game data has the format we need to parse it correctly
+    const gameData = this.state.gameData;
+    return gameData != null && gameData.levels != null
+      && this.getMaxLevel() >= this.state.currentLevel
+      && gameData.levels[this.state.currentLevel].cards != null
   }
   initialCardState(){
-    const cardData = this.state.gameData.levels[this.state.currentLevel].cards.slice();
+    // extract the card data for the current level from the loaded game data
     const cardState = [];
-    for (let i=0; i<cardData.length; i++){
-      cardState.push({
-        key: i,
-        content: cardData[i],
-        isFaceDown: true,
-        isMatched: false
-      });
+    if (this.gameDataIsInExpectedFormat()){
+      const cardData = this.state.gameData.levels[this.state.currentLevel].cards.slice();
+      for (let i=0; i<cardData.length; i++){
+        cardState.push({
+          key: i,
+          content: cardData[i],
+          isFaceDown: true,
+          isMatched: false
+        });
+      }
     }
     return cardState;
   }
   getUnmatchedFaceUpCard(){
+    // get the index of any card that is faced up and unmatched.
+    // return -1 if there are none
     let cardIndex = -1;
     for(let i=0; i<this.state.cardState.length; i++){
       const card = this.state.cardState[i];
@@ -159,6 +204,7 @@ class Game extends React.Component {
     return this.state.cardState[i].content === this.state.cardState[j].content;
   }
   checkAllCardsMatched(){
+    // check for the winning state
     let allMatched = true;
     for(let i=0; i<this.state.cardState.length; i++){
       if (!this.state.cardState[i].isMatched){
@@ -169,7 +215,10 @@ class Game extends React.Component {
     return allMatched;
   }
   handleClick(i){
-    if (this.state.gameClickable){
+    // invoked every time the user clicks a card
+    // if clicks are allowed  and the card is face down, flip it
+    // otherwise ignore the user click
+        if (this.state.gameClickable){
       if (this.state.gamePaused){
         this.setState({
           gamePaused: false 
@@ -189,14 +238,19 @@ class Game extends React.Component {
           this.setState({
             gameClickable: false
           });
+          // set a timer to check for a match / win state after the
+          // flipped card has been shown for a moment to allow users to see
+          // the card even if the cards don't match
           setTimeout(this.checkCardStateAfterClick.bind(this, i, unmatchedCardIndex), 750);
         }
       }
     }
   }
   checkCardStateAfterClick(i, unmatchedCardIndex){
+    // check for a match and change the state accordingly
+    // also check for a win state
     const cardState = this.state.cardState.slice();
-    if (this.cardsMatch(unmatchedCardIndex, i)){
+    if (unmatchedCardIndex >= 0 && this.cardsMatch(unmatchedCardIndex, i)){
       cardState[i].isMatched = true;
       cardState[unmatchedCardIndex].isMatched = true;
     }else{
@@ -219,9 +273,12 @@ class Game extends React.Component {
   }
   handleLevelUpBtnClick(){
     this.state.currentLevel++;
-    this.handleReplayBtnClick();
+    this.resetGameState();
   }
   handleReplayBtnClick(){
+    this.resetGameState();
+  }
+  resetGameState(){
     this.setState({
         cardState: this.initialCardState(),
         gameClickable: true,
@@ -229,29 +286,37 @@ class Game extends React.Component {
         numMismatches: 0
     });
   }
-  render() {
-    const cardData = this.state.cardState.slice();
-    let board;
-    if (cardData.length == 0){
-      board = (<div className={styles.text}>Loading ...</div>);
-    }else{
-      board = (<Board cardData={cardData} onClick={(i) => this.handleClick(i)}/>);
-    }
-    let wonMsg = null;
-    if (this.state.gameWon){
-      wonMsg = (<WinMessage 
+  getWinMessage(){
+    return (<WinMessage 
           showLevelUpBtn={this.state.currentLevel < this.state.maxLevel}
           onReplayBtnClick={()=>this.handleReplayBtnClick()} 
           onLevelUpBtnClick={()=>this.handleLevelUpBtnClick()}
-        />); 
+        />);
+  }
+  getStatusMessage(){
+    // a status message that displays above the game board
+    let statusMessage = null;
+    if (this.state.gameWon){
+      statusMessage = this.getWinMessage(); 
+    }else if (this.state.errorMessage != null){
+      statusMessage = (<div className={styles.text}>{this.state.errorMessage}</div>);
+    }else if (!this.state.gameLoaded){
+      statusMessage = (<div className={styles.text}>Loading ...</div>);
     }
+    return statusMessage;
+  }
+  render() {
+    const cardData = this.state.cardState.slice();
+    const statusMessage = this.getStatusMessage();
     return (
       <div> 
         <h1 className={`${styles.header} ${styles.text}`}>NYT Games Code Test</h1>
         <Timer shouldTick={!this.state.gamePaused} shouldReset={!this.state.gameWon && !this.state.gameStarted} />
         <div className={styles.text}>Mismatches: { this.state.numMismatches }</div>
-        <div>{wonMsg}</div>
-        <div className={styles.boardContainer}>{board}</div>
+        <div>{statusMessage}</div>
+        <div className={styles.boardContainer}>
+          <Board cardData={cardData} onClick={(i) => this.handleClick(i)}/>
+        </div>
       </div>
     )
   }
