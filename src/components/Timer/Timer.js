@@ -15,7 +15,7 @@ export const formatTime = (time) => {
 
 const Timer = ({ time = 0 }) => (
   <div className={styles.timer}>
-    {formatTime(time)}
+    Time Elapsed: {formatTime(time)}
   </div>
 )
 
@@ -29,23 +29,26 @@ class TimerContainer extends React.Component {
     super(props)
     this.state = {
       secondsElapsed: 0,
-      startTimer: false
+      shouldTick: false
     }
   }
-
+  
   componentWillMount(){
-    if (this.state.startTimer){
+    if (this.state.shouldTick){
       this.startTimer();
     }
   }
 
   componentWillReceiveProps(nextProps){
-    if (!this.state.startTimer && nextProps.startTimer){
-      this.state.startTimer = true; 
+    if (nextProps.shouldReset){
+      this.state.secondsElapsed = 0;
+    }
+    if (!this.state.shouldTick && nextProps.shouldTick){
+      this.state.shouldTick = true; 
       this.startTimer();
-    }else if (this.state.startTimer && !nextProps.startTimer){
-      this.state.startTimer = false;
-      this.endTimer();
+    }else if (this.state.shouldTick && !nextProps.shouldTick){
+      this.state.shouldTick = false;
+      this.stopTimer();
     }
   }
 
@@ -53,12 +56,12 @@ class TimerContainer extends React.Component {
     this.interval = setInterval(this.tick.bind(this), 1000)
   }
 
-  endTimer(){
+  stopTimer(){
     clearInterval(this.interval)
   }
 
   componentWillUnmount() {
-    this.endTimer();
+    this.stopTimer();
   }
 
   tick() {

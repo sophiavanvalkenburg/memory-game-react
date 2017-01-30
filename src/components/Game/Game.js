@@ -1,48 +1,8 @@
 import React from 'react'
+import 'whatwg-fetch'
 
 import Timer from '../Timer/Timer'
 import styles from './Game.scss'
-
-function getGameData(){
-  return {
-    "levels": [
-    {
-      "cards": [
-        "✈",
-        "♘",
-        "✈",
-        "♫",
-        "♫",
-        "☆",
-        "♘",
-        "☆"
-      ],
-      "difficulty": "easy"
-    },
-    {
-      "cards": [
-        "❄",
-        "⍨",
-        "♘",
-        "✈",
-        "☯",
-        "♠",
-        "☆",
-        "❄",
-        "♫",
-        "♫",
-        "☯",
-        "☆",
-        "✈",
-        "⍨",
-        "♠",
-        "♘"
-      ],
-      "difficulty": "hard"
-    },
-    ]
-  } 
-}
 
 const Card = props => (
   <button className={styles.boardCard} onClick={() => props.onClick()}>
@@ -56,7 +16,13 @@ class Board extends React.Component {
     super();
     this.state = {
       boardData: this.makeBoardData(props.cardData)
-    }
+    };
+  }
+
+  componentWillReceiveProps(props){
+    this.setState({
+      boardData: this.makeBoardData(props.cardData)
+    });
   }
 
   makeBoardData(cardData){
@@ -113,18 +79,54 @@ class Board extends React.Component {
   }
 }
 
+const WinMessage = props => {
+  let levelUpBtn = null;
+  if (props.showLevelUpBtn){
+    levelUpBtn = (
+        <button className={styles.winBtn} onClick={()=>props.onLevelUpBtnClick()}>Level Up</button>
+      )
+  }
+  return (
+    <div>
+      <h2 className={`${styles.text} ${styles.wonMsg}`}>Congratulations! You Won!</h2>
+      <button className={styles.winBtn} onClick={()=>props.onReplayBtnClick()}>Replay</button>
+      {levelUpBtn}
+    </div>
+  )
+}
+
 class Game extends React.Component {
   constructor(){
     super();
-    const gameData = getGameData();
     this.state = {
-      cardState: this.initialCardState(gameData),
+      cardState: [],
+      gamePaused: true,
+      gameClickable: false,
       gameStarted: false,
-      gameClickable: true
+      gameWon: false,
+      currentLevel: 0,
+      maxLevel: 0,
+      numMismatches: 0,
     }
   }
-  initialCardState(gameData){
-    const cardData = gameData.levels[0].cards.slice();
+  componentDidMount(){
+    fetch("https://web-code-test-dot-nyt-games-prd.appspot.com/cards.json")
+      .then((response) => {
+        return response.json();
+      }).then((gameData) => {
+        this.state.gameData = gameData;
+        this.setState({
+          cardState: this.initialCardState(),
+          gameClickable: true,
+          maxLevel: this.getMaxLevel()
+        });
+      })
+  }
+  getMaxLevel(){
+    return this.state.gameData.levels.length - 1;
+  }
+  initialCardState(){
+    const cardData = this.state.gameData.levels[this.state.currentLevel].cards.slice();
     const cardState = [];
     for (let i=0; i<cardData.length; i++){
       cardState.push({
@@ -162,10 +164,13 @@ class Game extends React.Component {
   }
   handleClick(i){
     if (this.state.gameClickable){
-      if (!this.state.gameStarted){
+      if (this.state.gamePaused){
         this.setState({
-          gameStarted: true
+          gamePaused: false 
         })
+      }
+      if (!this.state.gameStarted){
+        this.state.gameStarted = true;
       }
       if (this.state.cardState[i].isFaceDown){
         const cardState = this.state.cardState.slice();
@@ -191,6 +196,7 @@ class Game extends React.Component {
     }else{
       cardState[i].isFaceDown = true;
       cardState[unmatchedCardIndex].isFaceDown = true;
+      this.state.numMismatches++;
     }
     this.setState({
       cardState: cardState,
@@ -198,18 +204,47 @@ class Game extends React.Component {
     })
     if (this.checkAllCardsMatched()){
       this.setState({
+        gamePaused: true,
+        gameClickable: false,
+        gameWon: true,
         gameStarted: false,
-        gameClickable: false
       })
     }
   }
+  handleLevelUpBtnClick(){
+    this.state.currentLevel++;
+    this.handleReplayBtnClick();
+  }
+  handleReplayBtnClick(){
+    this.setState({
+        cardState: this.initialCardState(),
+        gameClickable: true,
+        gameWon: false
+    });
+  }
   render() {
     const cardData = this.state.cardState.slice();
+    let board;
+    if (cardData.length == 0){
+      board = (<div className={styles.text}>Loading ...</div>);
+    }else{
+      board = (<Board cardData={cardData} onClick={(i) => this.handleClick(i)}/>);
+    }
+    let wonMsg = null;
+    if (this.state.gameWon){
+      wonMsg = (<WinMessage 
+          showLevelUpBtn={this.state.currentLevel < this.state.maxLevel}
+          onReplayBtnClick={()=>this.handleReplayBtnClick()} 
+          onLevelUpBtnClick={()=>this.handleLevelUpBtnClick()}
+        />); 
+    }
     return (
-      <div>
-        <h1 className={styles.header}>NYT Games Code Test</h1>
-        <Timer startTimer={this.state.gameStarted} />
-        <div><Board cardData={cardData} onClick={(i) => this.handleClick(i)}/></div>
+      <div> 
+        <h1 className={`${styles.header} ${styles.text}`}>NYT Games Code Test</h1>
+        <Timer shouldTick={!this.state.gamePaused} shouldReset={!this.state.gameWon && !this.state.gameStarted} />
+        <div className={styles.text}>Mismatches: { this.state.numMismatches }</div>
+        <div className={styles.boardContainer}>{board}</div>
+        <div>{wonMsg}</div>
       </div>
     )
   }

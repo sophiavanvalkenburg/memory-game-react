@@ -1,7 +1,23 @@
 
+.text {
+  font-family: sans-serif;
+}
+
 .header {
   color: #333;
-  font-family: sans-serif;
+}
+
+.wonMsg {
+    margin-top: 10px;
+    color: red;
+}
+
+.winBtn {
+    margin: 5px;
+}
+
+.boardContainer{
+    margin-top: 10px;
 }
 
 .boardRow:after {
@@ -12,14 +28,14 @@
 
 .boardCard {
     background: #fff;
-    border: 1px solid #999;
+    border: 4px solid black;
     float: left;
     font-size: 24px;
     font-weight: bold;
     line-height: 34px;
     height: 50px;
-    margin-right: -1px;
-    margin-top: -1px;
+    margin-right: 3px;
+    margin-top: 3px;
     padding: 0;
     text-align: center;
     width: 50px;
