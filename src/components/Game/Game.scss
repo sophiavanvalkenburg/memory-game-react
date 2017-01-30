@@ -13,7 +13,9 @@
 }
 
 .winBtn {
-    margin: 5px;
+    margin-right: 5px;
+    border: 2px solid black;
+    background-color: white;
 }
 
 .boardContainer{
@@ -39,6 +41,10 @@
     padding: 0;
     text-align: center;
     width: 50px;
+}
+
+.boardCardEmpty {
+    border: 4px solid #fff;
 }
 
 .boardCard:focus {

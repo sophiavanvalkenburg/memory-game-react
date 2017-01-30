@@ -4,11 +4,17 @@ import 'whatwg-fetch'
 import Timer from '../Timer/Timer'
 import styles from './Game.scss'
 
-const Card = props => (
-  <button className={styles.boardCard} onClick={() => props.onClick()}>
-    {props.content}
-  </button>
-)
+const Card = props => {
+  let boardCardEmptyStyle = "";
+  if (props.content === null){
+    boardCardEmptyStyle = styles.boardCardEmpty;
+  }
+  return (
+    <button className={`${styles.boardCard} ${boardCardEmptyStyle}`} onClick={() => props.onClick()}>
+      {props.content}
+    </button>
+  )
+}
 
 class Board extends React.Component {
 
@@ -219,7 +225,8 @@ class Game extends React.Component {
     this.setState({
         cardState: this.initialCardState(),
         gameClickable: true,
-        gameWon: false
+        gameWon: false,
+        numMismatches: 0
     });
   }
   render() {
@@ -243,8 +250,8 @@ class Game extends React.Component {
         <h1 className={`${styles.header} ${styles.text}`}>NYT Games Code Test</h1>
         <Timer shouldTick={!this.state.gamePaused} shouldReset={!this.state.gameWon && !this.state.gameStarted} />
         <div className={styles.text}>Mismatches: { this.state.numMismatches }</div>
-        <div className={styles.boardContainer}>{board}</div>
         <div>{wonMsg}</div>
+        <div className={styles.boardContainer}>{board}</div>
       </div>
     )
   }
